@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BAC 2027 - نظام الدراسة الذكي للبكالوريا">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>🎓 BAC 2027 - نظام الدراسة الذكي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ui/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- ========== TOP BAR ========== -->
+        <header id="topbar">
+            <div class="topbar-left">
+                <span class="logo">🎓 BAC 2027</span>
+                <span class="logo-sub">Intelligent Study OS</span>
+            </div>
+            <div class="topbar-center">
+                <span id="current-date"></span>
+            </div>
+            <div class="topbar-right">
+                <span id="streak-display" class="badge-streak">🔥 0 يوم</span>
+                <span id="connection-status" class="badge-streak" style="background:var(--success);display:none;">🟢</span>
+                <button id="toggle-theme" class="btn-icon" title="تبديل المظهر">🌙</button>
+            </div>
+        </header>
+
+        <div id="main-layout">
+            <!-- ========== SIDEBAR ========== -->
+            <nav id="sidebar">
+                <div class="sidebar-menu">
+                    <button class="menu-item active" data-page="dashboard">
+                        <span class="menu-icon">📊</span>
+                        <span class="menu-label">لوحة التحكم</span>
+                    </button>
+                    <button class="menu-item" data-page="daily-log">
+                        <span class="menu-icon">📝</span>
+                        <span class="menu-label">تسجيل اليومي</span>
+                    </button>
+                    <button class="menu-item" data-page="subjects">
+                        <span class="menu-icon">📚</span>
+                        <span class="menu-label">المواد</span>
+                    </button>
+                    <button class="menu-item" data-page="analytics">
+                        <span class="menu-icon">📈</span>
+                        <span class="menu-label">التحليلات</span>
+                    </button>
+                    <button class="menu-item" data-page="pomodoro">
+                        <span class="menu-icon">⏱️</span>
+                        <span class="menu-label">المؤقت</span>
+                    </button>
+                    <button class="menu-item" data-page="tasks">
+                        <span class="menu-icon">✅</span>
+                        <span class="menu-label">المهام</span>
+                    </button>
+                    <button class="menu-item" data-page="search">
+                        <span class="menu-icon">🔍</span>
+                        <span class="menu-label">بحث</span>
+                    </button>
+                    <button class="menu-item" data-page="knowledge-graph">
+                        <span class="menu-icon">🧠</span>
+                        <span class="menu-label">خريطة المعرفة</span>
+                    </button>
+                    <button class="menu-item" data-page="flashcards">
+                        <span class="menu-icon">🧠</span>
+                        <span class="menu-label">البطاقات التعليمية</span>
+                    </button>
+                </div>
+                <div class="sidebar-footer">
+                    <div id="sidebar-bac-score" class="mini-bac-score">
+                        <div class="mini-score-label">BAC Readiness</div>
+                        <div class="mini-score-value">--</div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- ========== MAIN CONTENT ========== -->
+            <main id="content">
+                <!-- Loading State -->
+                <div id="loading" class="page active">
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <h2>جاري تحميل النظام...</h2>
+                        <p>قراءة وتحليل ملفات Obsidian Vault</p>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">يجب تشغيل السيرفر أولاً: npm start</p>
+                    </div>
+                </div>
+
+                <!-- Dashboard Page -->
+                <div id="page-dashboard" class="page">
+                    <div class="page-header">
+                        <h1>📊 لوحة التحكم</h1>
+                        <p id="dashboard-subtitle">ملخص اليوم والتقدم العام</p>
+                    </div>
+
+                    <!-- BAC Readiness Score -->
+                    <div class="bac-readiness-card">
+                        <div class="bac-readiness-header">
+                            <h2>🏆 مؤشر الجاهزية للبكالوريا</h2>
+                            <span id="bac-score-display" class="bac-score-big">--</span>
+                        </div>
+                        <div class="bac-progress-bar">
+                            <div id="bac-progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="bac-breakdown" id="bac-breakdown"></div>
+                        <div class="bac-weak-points" id="bac-weak-points"></div>
+                        <div class="bac-recommendations" id="bac-recommendations"></div>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="stats-row" id="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-icon">📖</div>
+                            <div class="stat-value" id="stat-total-lessons">0</div>
+                            <div class="stat-label">إجمالي الدروس</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✔</div>
+                            <div class="stat-value" id="stat-completed">0</div>
+                            <div class="stat-label">دروس مكتملة</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📈</div>
+                            <div class="stat-value" id="stat-progress">0%</div>
+                            <div class="stat-label">التقدم العام</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔁</div>
+                            <div class="stat-value" id="stat-review-needed">0</div>
+                            <div class="stat-label">تحتاج مراجعة</div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Summary + Suggestions -->
+                    <div class="dashboard-grid">
+                        <div class="card" id="today-card">
+                            <h3>📅 ملخص اليوم</h3>
+                            <div id="today-content">
+                                <p class="empty-state">لم يتم تسجيل أي نشاط اليوم</p>
+                            </div>
+                        </div>
+
+                        <div class="card" id="suggestion-card">
+                            <h3>🧠 اقتراحات اليوم</h3>
+                            <div id="suggestion-content">
+                                <p class="empty-state">جاري تحليل البيانات...</p>
+                            </div>
+                        </div>
+
+                        <div class="card" id="review-card">
+                            <h3>🔄 مراجعات اليوم</h3>
+                            <div id="review-content">
+                                <p class="empty-state">لا توجد مراجعات مطلوبة اليوم</p>
+                            </div>
+                        </div>
+
+                        <div class="card" id="subjects-card">
+                            <h3>📚 تقدم المواد</h3>
+                            <div id="subjects-progress-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Log Page -->
+                <div id="page-daily-log" class="page">
+                    <div class="page-header">
+                        <h1>📝 تسجيل اليوم الدراسي</h1>
+                        <p>سجل ما درسته اليوم في أقل من دقيقة</p>
+                    </div>
+
+                    <form id="daily-log-form" class="card">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>التاريخ</label>
+                                <input type="date" id="log-date" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>المزاج</label>
+                                <select id="log-mood" class="form-input">
+                                    <option value="great">😊 ممتاز</option>
+                                    <option value="good">🙂 جيد</option>
+                                    <option value="neutral" selected>😐 عادي</option>
+                                    <option value="tired">😩 متعب</option>
+                                    <option value="bad">😞 سيء</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>تقييم الإنتاجية (1-10)</label>
+                                <input type="number" id="log-productivity" class="form-input" min="1" max="10" value="5">
+                            </div>
+                        </div>
+
+                        <h3>المواد التي درستها اليوم</h3>
+                        <div id="subjects-log-container">
+                            <!-- سيتم إنشاء الصف الأول تلقائياً بواسطة JavaScript -->
+                        </div>
+                        <button type="button" id="add-subject-btn" class="btn-secondary">+ إضافة مادة</button>
+
+                        <h3>المهام المنجزة</h3>
+                        <div id="tasks-completed-container">
+                            <div class="task-entry">
+                                <input type="text" class="form-input" placeholder="أضف مهمة منجزة">
+                            </div>
+                        </div>
+                        <button type="button" id="add-task-btn" class="btn-secondary">+ إضافة مهمة</button>
+
+                        <h3>أهداف الغد</h3>
+                        <div id="goals-container">
+                            <div class="goal-entry">
+                                <input type="text" class="form-input" placeholder="هدف للغد">
+                            </div>
+                        </div>
+                        <button type="button" id="add-goal-btn" class="btn-secondary">+ إضافة هدف</button>
+
+                        <div class="form-actions">
+                            <button type="submit" id="save-daily-btn" class="btn-primary">💾 حفظ اليوم</button>
+                            <div id="save-status" class="save-status"></div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Subjects Page -->
+                <div id="page-subjects" class="page">
+                    <div class="page-header">
+                        <h1>📚 المواد الدراسية</h1>
+                        <p>عرض تفاصيل كل مادة وتقدم الدروس</p>
+                    </div>
+                    <div id="subjects-grid" class="subjects-grid"></div>
+                    
+                    <!-- Subject Detail Modal -->
+                    <div id="subject-detail" class="modal-overlay" style="display:none">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 id="subject-detail-title"></h2>
+                                <button class="btn-icon close-modal">✕</button>
+                            </div>
+                            <div class="modal-body" id="subject-detail-body"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Page -->
+                <div id="page-analytics" class="page">
+                    <div class="page-header">
+                        <h1>📈 التحليلات والتقارير</h1>
+                        <p>تحليل الأداء الدراسي والتقدم</p>
+                    </div>
+
+                    <!-- KPI Cards Row -->
+                    <div class="stats-row" id="analytics-kpi-row">
+                        <div class="stat-card">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-value" id="kpi-total-hours">0</div>
+                            <div class="stat-label">إجمالي الساعات</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-value" id="kpi-avg-daily">0</div>
+                            <div class="stat-label">المعدل اليومي (س)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-value" id="kpi-avg-productivity">0</div>
+                            <div class="stat-label">متوسط الإنتاجية</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔥</div>
+                            <div class="stat-value" id="kpi-streak">0</div>
+                            <div class="stat-label">أيام الاستمرار</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-value" id="kpi-sessions">0</div>
+                            <div class="stat-label">إجمالي الجلسات</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="analytics-grid">
+                        <div class="card">
+                            <h3>📊 تقدم المواد</h3>
+                            <canvas id="progress-chart"></canvas>
+                        </div>
+                        <div class="card">
+                            <h3>⏱️ ساعات الدراسة اليومية</h3>
+                            <canvas id="hours-chart"></canvas>
+                        </div>
+                        <div class="card">
+                            <h3>📈 توزيع الوقت على المواد</h3>
+                            <canvas id="subject-distribution-chart"></canvas>
+                        </div>
+                        <div class="card">
+                            <h3>⭐ الإنتاجية الأسبوعية</h3>
+                            <canvas id="productivity-chart"></canvas>
+                        </div>
+                        <div class="card" style="grid-column: span 2">
+                            <h3>📋 مؤشرات الأداء التفصيلية</h3>
+                            <div id="analytics-stats" class="analytics-stats"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pomodoro Page -->
+                <div id="page-pomodoro" class="page">
+                    <div class="page-header">
+                        <h1>⏱️ مؤقت التركيز (Pomodoro)</h1>
+                <p>تقنية بومودورو للدراسة المركزة</p>
+                        <button id="pomodoro-settings-btn" class="btn-icon" title="إعدادات المؤقت" style="float:right;margin-top:-40px;">⚙️</button>
+                    </div>
+                    <div class="pomodoro-container card">
+                        <div class="pomodoro-mode-selector">
+                            <button class="pomodoro-mode-btn active" data-mode="work">📚 دراسة</button>
+                            <button class="pomodoro-mode-btn" data-mode="shortBreak">☕ استراحة قصيرة</button>
+                            <button class="pomodoro-mode-btn" data-mode="longBreak">🌙 استراحة طويلة</button>
+                        </div>
+                        <div class="pomodoro-timer" id="pomodoro-timer">25:00</div>
+                        <div class="pomodoro-label" id="pomodoro-label">وقت التركيز</div>
+                        <div class="pomodoro-controls">
+                            <button id="pomodoro-start" class="btn-primary">▶ بدء</button>
+                            <button id="pomodoro-pause" class="btn-secondary">⏸ إيقاف</button>
+                            <button id="pomodoro-reset" class="btn-secondary">🔄 إعادة</button>
+                        </div>
+                        <div class="pomodoro-stats">
+                            <span>اليوم: <strong id="pomodoro-today">0</strong> جلسة</span>
+                            <span>المجموع: <strong id="pomodoro-total">0</strong> جلسة</span>
+                            <span>❮ESC❯ للخروج من وضع التركيز</span>
+                        </div>
+                        <div class="pomodoro-chart-container">
+                            <canvas id="pomodoro-chart" width="600" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pomodoro Settings Modal -->
+                <div id="pomodoro-settings-modal" class="modal" style="display:none;">
+                    <div class="modal-content" style="max-width:500px;">
+                        <div class="modal-header">
+                            <h2>⚙️ إعدادات المؤقت</h2>
+                            <button class="close-modal" style="float:left;">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="settings-group">
+                                <h3>أوقات الجلسات (بالدقائق)</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>دراسة</label>
+                                        <input type="number" id="setting-work" class="form-input" min="1" max="90" value="25">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>استراحة قصيرة</label>
+                                        <input type="number" id="setting-short-break" class="form-input" min="1" max="30" value="5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>استراحة طويلة</label>
+                                        <input type="number" id="setting-long-break" class="form-input" min="1" max="60" value="15">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <h3>الأصوات</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="setting-sound-enabled" checked> تفعيل الأصوات
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>مستوى الصوت</label>
+                                        <input type="range" id="setting-sound-volume" class="form-input" min="0" max="1" step="0.1" value="0.3" style="width:100%;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <h3>الإشعارات</h3>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="setting-notifications-enabled" checked> تفعيل إشعارات سطح المكتب
+                                    </label>
+                                </div>
+                            </div>
+                            <button id="save-pomodoro-settings" class="btn-primary" style="width:100%;margin-top:16px;">💾 حفظ الإعدادات</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Page -->
+                <div id="page-tasks" class="page">
+                    <div class="page-header">
+                        <h1>✅ المهام</h1>
+                        <p>إدارة المهام اليومية والأسبوعية</p>
+                    </div>
+                    <div class="tasks-container">
+                        <div class="card">
+                            <div class="task-input-row">
+                                <input type="text" id="new-task-input" class="form-input" placeholder="أضف مهمة جديدة...">
+                                <select id="new-task-type" class="form-input">
+                                    <option value="daily">يومية</option>
+                                    <option value="weekly">أسبوعية</option>
+                                    <option value="review">مراجعة</option>
+                                    <option value="exam">امتحان</option>
+                                </select>
+                                <button id="add-task-btn-main" class="btn-primary">➕ إضافة</button>
+                            </div>
+                        </div>
+                        <div id="tasks-list" class="card"></div>
+                    </div>
+                </div>
+
+                <!-- Search Page -->
+                <div id="page-search" class="page">
+                    <div class="page-header">
+                        <h1>🔍 بحث في Vault</h1>
+                        <p>ابحث في جميع ملفات Obsidian</p>
+                    </div>
+                    <div class="search-container card">
+                        <div class="search-input-row">
+                            <input type="text" id="search-input" class="form-input" placeholder="اكتب كلمة البحث..." style="flex:1">
+                            <button id="search-btn" class="btn-primary">🔍 بحث</button>
+                        </div>
+                        <div id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Knowledge Graph Page -->
+                <div id="page-knowledge-graph" class="page">
+                    <div class="page-header">
+                        <h1>🧠 خريطة المعرفة</h1>
+                        <p>تصVisualize روابط ملفات Obsidian والوسوم</p>
+                    </div>
+                    <div class="knowledge-graph-container">
+                        <div class="card" style="margin-bottom:16px">
+                            <div class="graph-controls">
+                                <button id="load-graph-btn" class="btn-primary">🔄 تحميل الرسم البياني</button>
+                                <span id="graph-stats" class="graph-stats"></span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <canvas id="knowledge-graph-canvas" width="1000" height="600" style="width:100%;height:600px;background:var(--bg-secondary);border-radius:8px"></canvas>
+                        </div>
+                        <div id="graph-details" class="card" style="margin-top:16px;display:none">
+                            <h3>📋 تفاصيل العقدة</h3>
+                            <div id="graph-details-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Offline Indicator -->
+    <div id="offline-indicator" class="offline-indicator">
+        <span>⚠️ أنت غير متصل - وضع القراءة فقط</span>
+    </div>
+
+    <!-- ====== 🔥 التعديلات هنا ====== -->
+    <!-- 1. تحميل مكتبة Chart.js أولاً -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+    <!-- 2. تحميل utils.js (يحتوي على دوال الأمان الصحيحة) -->
+    <script src="utils.js"></script>
+    <!-- 3. تحميل المحسنات (التي أصبحت تعتمد على window) -->
+    <script src="ui/analytics-enhancer.js"></script>
+    <!-- 4. تحميل التطبيق الرئيسي كـ Module (لتفعيل import) -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

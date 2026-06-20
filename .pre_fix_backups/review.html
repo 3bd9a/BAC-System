@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جلسة المراجعة - BAC 2027</title>
+    <link rel="stylesheet" href="srs/styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="review-header">
+            <div class="header-content">
+                <h1>🔄 جلسة المراجعة</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="exitReview()">
+                        ✕ إنهاء
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-wrapper">
+                <div class="progress-info">
+                    <span id="progress-text">البطاقة 0 من 0</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="review-progress"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Stats -->
+        <div class="session-stats" id="session-stats">
+            <div class="session-stat">
+                <span class="session-stat-icon">🔴</span>
+                <span class="session-stat-value" id="stat-forgot">0</span>
+            </div>
+            <div class="session-stat">
+                <span class="session-stat-icon">🟡</span>
+                <span class="session-stat-value" id="stat-struggled">0</span>
+            </div>
+            <div class="session-stat">
+                <span class="session-stat-icon">🟢</span>
+                <span class="session-stat-value" id="stat-remembered">0</span>
+            </div>
+            <div class="session-stat">
+                <span class="session-stat-icon">⚪</span>
+                <span class="session-stat-value" id="stat-mastered">0</span>
+            </div>
+        </div>
+
+        <!-- Card Display -->
+        <div class="card-wrapper" id="card-wrapper">
+            <!-- Question Side -->
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-content">
+                    <div class="card-face card-front" id="card-front">
+                        <div class="card-label">السؤال</div>
+                        <div class="card-text" id="card-question"></div>
+                        <div class="card-hint">
+                            <span>💡 اضغط لرؤية الجواب</span>
+                        </div>
+                    </div>
+                    <div class="card-face card-back" id="card-back" style="display: none;">
+                        <div class="card-label">الجواب</div>
+                        <div class="card-text" id="card-answer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Counter -->
+            <div class="card-counter" id="card-counter">
+                <span id="remaining-count">0</span> بطاقات متبقية
+            </div>
+        </div>
+
+        <!-- Rating Buttons -->
+        <div class="rating-buttons" id="rating-buttons" style="display: none;">
+            <div class="rating-buttons-header">
+                <span class="rating-header-text">كيف كانت ذاكرتك لهذه البطاقة؟</span>
+            </div>
+            <div class="rating-buttons-grid">
+                <button class="rating-btn rating-again" onclick="submitRating('Forgot')" title="نسيت - إعادة تعلم">
+                    <span class="rating-icon">🔴</span>
+                    <span class="rating-label">نسيت</span>
+                    <span class="rating-desc"><1 دقيقة</span>
+                </button>
+                <button class="rating-btn rating-hard" onclick="submitRating('Struggled')" title="وجدت صعوبة">
+                    <span class="rating-icon">🟡</span>
+                    <span class="rating-label">صعب</span>
+                    <span class="rating-desc"><10 دقائق</span>
+                </button>
+                <button class="rating-btn rating-good" onclick="submitRating('Remembered')" title="تذكرت بشكل جيد">
+                    <span class="rating-icon">🟢</span>
+                    <span class="rating-label">جيد</span>
+                    <span class="rating-desc">~1-4 أيام</span>
+                </button>
+                <button class="rating-btn rating-easy" onclick="submitRating('Mastered')" title="تذكرت بسهولة">
+                    <span class="rating-icon">⚪</span>
+                    <span class="rating-label">سهل</span>
+                    <span class="rating-desc">~4+ أيام</span>
+                </button>
+            </div>
+            <!-- Keyboard shortcuts hint -->
+            <div class="keyboard-hints">
+                <span class="hint-key">1-4</span> للتقيم السريع
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div class="completion-screen" id="completion-screen" style="display: none;">
+            <div class="completion-icon">🎉</div>
+            <h2>أحسنت!</h2>
+            <p class="completion-message" id="completion-message">
+                لقد أكملت جميع البطاقات المستحقة اليوم
+            </p>
+            
+            <div class="completion-stats">
+                <h3>📊 إحصائيات الجلسة</h3>
+                <div class="completion-stats-grid">
+                    <div class="completion-stat-item">
+                        <span class="completion-stat-value" id="session-total">0</span>
+                        <span class="completion-stat-label">إجمالي البطاقات</span>
+                    </div>
+                    <div class="completion-stat-item">
+                        <span class="completion-stat-value" id="session-time">0د</span>
+                        <span class="completion-stat-label">مدة الجلسة</span>
+                    </div>
+                    <div class="completion-stat-item">
+                        <span class="completion-stat-value" id="session-accuracy">0%</span>
+                        <span class="completion-stat-label">نسبة الاستبقاء</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="completion-actions">
+                <button class="btn btn-primary" onclick="exitReview()">
+                    ← العودة للقائمة
+                </button>
+                <button class="btn btn-secondary" onclick="navigateTo('cards')">
+                    📚 إدارة البطاقات
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="fsrs.js"></script>
+    <script src="srs-manager.js"></script>
+    <script>
+        // ============================================================
+        // 🚀 SESSION STATE
+        // ============================================================
+
+        let sessionCards = [];
+        let currentCardIndex = 0;
+        let sessionStats = {
+            forgot: 0,
+            struggled: 0,
+            remembered: 0,
+            mastered: 0
+        };
+        let sessionStartTime = null;
+        let isCardFlipped = false;
+
+        // ============================================================
+        // 🚀 INITIALIZATION
+        // ============================================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            sessionStartTime = new Date();
+            await initSRSManager();
+            loadReviewSession();
+            setupKeyboardShortcuts();
+        });
+
+        async function loadReviewSession() {
+            const manager = getSRSManager();
+            const settings = manager.settings;
+            
+            // Get due cards up to daily limit
+            sessionCards = manager.getDueCards(settings.dailyLimit);
+            
+            if (sessionCards.length === 0) {
+                showCompletion('لا توجد بطاقات مستحقة للمراجعة اليوم!');
+                return;
+            }
+
+            updateProgress();
+            showCurrentCard();
+        }
+
+        // ============================================================
+        // 📦 CARD DISPLAY
+        // ============================================================
+
+        function showCurrentCard() {
+            if (currentCardIndex >= sessionCards.length) {
+                finishSession();
+                return;
+            }
+
+            const card = sessionCards[currentCardIndex];
+            isCardFlipped = false;
+
+            // Show question
+            document.getElementById('card-question').textContent = card.question;
+            document.getElementById('card-answer').textContent = card.answer;
+
+            // Reset to front side
+            document.getElementById('card-front').style.display = 'flex';
+            document.getElementById('card-back').style.display = 'none';
+            document.getElementById('card-hint').style.display = 'block';
+
+            // Hide rating buttons initially
+            document.getElementById('rating-buttons').style.display = 'none';
+
+            updateProgress();
+            updateRemainingCount();
+        }
+
+        function flipCard() {
+            if (isCardFlipped) return;
+            
+            isCardFlipped = true;
+            document.getElementById('card-front').style.display = 'none';
+            document.getElementById('card-back').style.display = 'flex';
+            document.getElementById('card-hint').style.display = 'none';
+            
+            // Show rating buttons after flip
+            document.getElementById('rating-buttons').style.display = 'block';
+        }
+
+        // ============================================================
+        // ⭐ RATING SUBMISSION
+        // ============================================================
+
+        function submitRating(rating) {
+            const card = sessionCards[currentCardIndex];
+            
+            // Process the review
+            const manager = getSRSManager();
+            const result = manager.processReview(card.id, rating);
+            
+            if (!result) {
+                showToast('❌ فشل تسجيل التقييم');
+                return;
+            }
+
+            // Update session stats
+            sessionStats[rating.toLowerCase()]++;
+            updateSessionStats();
+
+            // Move to next card
+            currentCardIndex++;
+            
+            if (currentCardIndex >= sessionCards.length) {
+                finishSession();
+            } else {
+                showCurrentCard();
+            }
+        }
+
+        function finishSession() {
+            const sessionDuration = Math.round((new Date() - sessionStartTime) / 1000 / 60);
+            const totalCards = sessionCards.length;
+            const remembered = sessionStats.remembered + sessionStats.mastered;
+            const accuracy = totalCards > 0 ? Math.round((remembered / totalCards) * 100) : 0;
+
+            // Update completion screen
+            document.getElementById('session-total').textContent = totalCards;
+            document.getElementById('session-time').textContent = sessionDuration + 'د';
+            document.getElementById('session-accuracy').textContent = accuracy + '%';
+
+            // Hide card, show completion
+            document.getElementById('card-wrapper').style.display = 'none';
+            document.getElementById('rating-buttons').style.display = 'none';
+            document.getElementById('progress-container').style.display = 'none';
+            document.getElementById('session-stats').style.display = 'none';
+            document.getElementById('completion-screen').style.display = 'block';
+
+            // Update message based on performance
+            const message = accuracy >= 80 ? '📈 أداء ممتاز!' :
+                accuracy >= 60 ? '👍 أداء جيد!' :
+                accuracy >= 40 ? '💪 استمر في المحاولة!' :
+                '📚 تحتاج لمراجعة أكثر';
+            document.getElementById('completion-message').textContent = message;
+        }
+
+        function showCompletion(message) {
+            document.getElementById('card-wrapper').style.display = 'none';
+            document.getElementById('rating-buttons').style.display = 'none';
+            document.getElementById('progress-container').style.display = 'none';
+            document.getElementById('session-stats').style.display = 'none';
+            document.getElementById('completion-screen').style.display = 'block';
+            document.getElementById('completion-message').textContent = message || 'لا توجد بطاقات مستحقة للمراجعة اليوم!';
+        }
+
+        // ============================================================
+        // 📊 UI UPDATES
+        // ============================================================
+
+        function updateProgress() {
+            const total = sessionCards.length;
+            const current = currentCardIndex + 1;
+            const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+
+            document.getElementById('progress-text').textContent = `البطاقة ${current} من ${total}`;
+            document.getElementById('progress-percent').textContent = percent + '%';
+            document.getElementById('review-progress').style.width = percent + '%';
+        }
+
+        function updateRemainingCount() {
+            const remaining = sessionCards.length - currentCardIndex;
+            document.getElementById('remaining-count').textContent = remaining;
+        }
+
+        function updateSessionStats() {
+            document.getElementById('stat-forgot').textContent = sessionStats.forgot;
+            document.getElementById('stat-struggled').textContent = sessionStats.struggled;
+            document.getElementById('stat-remembered').textContent = sessionStats.remembered;
+            document.getElementById('stat-mastered').textContent = sessionStats.mastered;
+        }
+
+        // ============================================================
+        // ⌨️ KEYBOARD SHORTCUTS
+        // ============================================================
+
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Flip card on Space or Enter if not flipped
+                if ((e.code === 'Space' || e.code === 'Enter') && !isCardFlipped) {
+                    e.preventDefault();
+                    flipCard();
+                    return;
+                }
+
+                // Submit rating with number keys if card is flipped
+                if (isCardFlipped && ['1', '2', '3', '4'].includes(e.key)) {
+                    e.preventDefault();
+                    const ratings = {
+                        '1': 'Forgot',
+                        '2': 'Struggled',
+                        '3': 'Remembered',
+                        '4': 'Mastered'
+                    };
+                    submitRating(ratings[e.key]);
+                }
+            });
+        }
+
+        // ============================================================
+        // 🚪 NAVIGATION
+        // ============================================================
+
+        function exitReview() {
+            navigateTo('cards');
+        }
+
+        function navigateTo(page) {
+            window.location.href = page + '.html';
+        }
+
+        // ============================================================
+        // 🛠️ UTILITY FUNCTIONS
+        // ============================================================
+
+        function showToast(message, type = 'success') {
+            if (window.showToast) {
+                window.showToast(message, type);
+            } else {
+                console.log(message);
+            }
+        }
+    </script>
+</body>
+</html>

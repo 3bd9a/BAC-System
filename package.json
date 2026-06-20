@@ -1,0 +1,21 @@
+{
+  "name": "bac-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "chart.js": "^4.5.1",
+    "chokidar": "^5.0.0",
+    "gray-matter": "^4.0.3"
+  }
+}

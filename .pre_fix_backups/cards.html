@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البطاقات التعليمية - BAC 2027</title>
+    <link rel="stylesheet" href="srs/styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="srs-header">
+            <div class="header-content">
+                <h1>🧠 البطاقات التعليمية</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="openCreateModal()">
+                        ➕ بطاقة جديدة
+                    </button>
+                    <button class="btn btn-secondary" onclick="navigateTo('dashboard')">
+                        ← العودة
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-item">
+                <span class="stat-value" id="stat-total">0</span>
+                <span class="stat-label">إجمالي البطاقات</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-due">0</span>
+                <span class="stat-label">مستحقة اليوم</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-new">0</span>
+                <span class="stat-label">جديدة</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-learning">0</span>
+                <span class="stat-label">قيد التعلم</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-review">0</span>
+                <span class="stat-label">في المراجعة</span>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="controls-bar">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="🔍 بحث في البطاقات..."
+                    oninput="handleSearch()"
+                >
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">
+                    الكل
+                </button>
+                <button class="filter-btn" data-filter="new" onclick="setFilter('new')">
+                    جديدة
+                </button>
+                <button class="filter-btn" data-filter="due" onclick="setFilter('due')">
+                    مستحقة
+                </button>
+            </div>
+        </div>
+
+        <!-- Cards List -->
+        <div class="cards-container" id="cards-container">
+            <!-- Cards will be dynamically loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-icon">📚</div>
+            <h3>لا توجد بطاقات</h3>
+            <p>ابدأ بإنشاء بطاقاتك التعليمية الأولى</p>
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                ➕ إنشاء بطاقة
+            </button>
+        </div>
+    </div>
+
+    <!-- Create Card Modal -->
+    <div class="modal" id="create-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>بطاقة تعليمية جديدة</h2>
+                <button class="modal-close" onclick="closeCreateModal()">✕</button>
+            </div>
+            <form id="create-card-form" onsubmit="createCard(event)">
+                <div class="form-group">
+                    <label for="card-question">السؤال</label>
+                    <textarea 
+                        id="card-question" 
+                        rows="3" 
+                        placeholder="اكتب السؤال هنا..."
+                        required
+                    ></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="card-answer">الجواب</label>
+                    <textarea 
+                        id="card-answer" 
+                        rows="4" 
+                        placeholder="اكتب الجواب هنا..."
+                        required
+                    ></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="card-deck">الأسطوانة (Deck)</label>
+                        <input 
+                            type="text" 
+                            id="card-deck" 
+                            list="deck-suggestions"
+                            placeholder="مثال: رياضيات، فيزياء..."
+                            value="default"
+                        >
+                        <datalist id="deck-suggestions">
+                            <!-- Filled dynamically -->
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="card-tags">الوسوم</label>
+                        <input 
+                            type="text" 
+                            id="card-tags" 
+                            placeholder="افصل بينها بفاصلة: mathematiques, equations"
+                        >
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
+                        إلغاء
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        💾 حفظ البطاقة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Card Detail Modal -->
+    <div class="modal" id="detail-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>تفاصيل البطاقة</h2>
+                <button class="modal-close" onclick="closeDetailModal()">✕</button>
+            </div>
+            <div class="card-detail-content" id="card-detail-content">
+                <!-- Content filled dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="deleteCurrentCard()">
+                    🗑️ حذف
+                </button>
+                <button class="btn btn-secondary" onclick="closeDetailModal()">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="fsrs.js"></script>
+    <script src="srs-manager.js"></script>
+    <script>
+        // ============================================================
+        // 🚀 INITIALIZATION
+        // ============================================================
+
+        let currentFilter = 'all';
+        let currentSearchQuery = '';
+        let selectedCardId = null;
+        let allCards = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initSRSManager();
+            loadCards();
+            updateStats();
+        });
+
+        // ============================================================
+        // 📋 CARD LOADING & RENDERING
+        // ============================================================
+
+        async function loadCards() {
+            const manager = getSRSManager();
+            allCards = manager.getAllCards();
+            renderCards();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            // Filter cards
+            let filteredCards = [...allCards];
+            
+            // Apply search
+            if (currentSearchQuery) {
+                const query = currentSearchQuery.toLowerCase();
+                filteredCards = filteredCards.filter(card =>
+                    card.question.toLowerCase().includes(query) ||
+                    card.answer.toLowerCase().includes(query) ||
+                    card.tags.some(tag => tag.toLowerCase().includes(query))
+                );
+            }
+            
+            // Apply filter
+            if (currentFilter === 'new') {
+                filteredCards = filteredCards.filter(card => !card.assessment);
+            } else if (currentFilter === 'due') {
+                filteredCards = filteredCards.filter(card => card.isDue());
+            }
+            
+            // Show/hide empty state
+            if (filteredCards.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            // Render cards
+            container.innerHTML = filteredCards.map(card => {
+                const dueStatus = getDueStatus(card);
+                const stateBadge = getStateBadge(card);
+                const daysUntil = card.getDaysUntilDue();
+                
+                return `
+                    <div class="card-item" onclick="showCardDetail('${card.id}')">
+                        <div class="card-header">
+                            <div class="card-deck">${card.deck}</div>
+                            ${stateBadge}
+                        </div>
+                        <div class="card-preview">
+                            <div class="card-question-preview">
+                                ${escapeHtml(card.question.substring(0, 100))}${card.question.length > 100 ? '...' : ''}
+                            </div>
+                        </div>
+                        <div class="card-meta">
+                            <span class="card-tags">
+                                ${card.tags.slice(0, 3).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+                            </span>
+                            <span class="card-status ${dueStatus.class}">${dueStatus.text}</span>
+                        </div>
+                        ${card.assessment ? `
+                            <div class="card-stats">
+                                <span>📊 ${card.assessment.stability.toFixed(1)}</span>
+                                <span>📅 ${daysUntil === 0 ? 'اليوم' : daysUntil === 1 ? 'غداً' : `بعد ${daysUntil} يوم`}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getDueStatus(card) {
+            if (!card.assessment) {
+                return { text: '🆕 جديدة', class: 'new' };
+            }
+            
+            const daysUntil = card.getDaysUntilDue();
+            if (daysUntil === 0) {
+                return { text: '⏰ مستحقة اليوم', class: 'due' };
+            } else if (daysUntil === 1) {
+                return { text: '📅 غداً', class: 'soon' };
+            } else if (daysUntil <= 7) {
+                return { text: `📅 بعد ${daysUntil} يوم`, class: 'normal' };
+            } else {
+                return { text: `✓ بعد ${daysUntil} يوم`, class: 'far' };
+            }
+        }
+
+        function getStateBadge(card) {
+            if (!card.assessment) {
+                return '<span class="badge badge-new">جديدة</span>';
+            }
+            
+            const state = card.assessment.state;
+            if (state === 'Learning') {
+                return '<span class="badge badge-learning">تعلم</span>';
+            } else if (state === 'Review') {
+                return '<span class="badge badge-review">مراجعة</span>';
+            } else if (state === 'Relearning') {
+                return '<span class="badge badge-relearning">إعادة تعلم</span>';
+            }
+            return '';
+        }
+
+        function updateStats() {
+            const manager = getSRSManager();
+            const stats = manager.getStats();
+            
+            document.getElementById('stat-total').textContent = stats.totalCards;
+            document.getElementById('stat-due').textContent = stats.dueToday;
+            document.getElementById('stat-new').textContent = stats.newCards;
+            document.getElementById('stat-learning').textContent = stats.learningCards;
+            document.getElementById('stat-review').textContent = stats.reviewCards;
+        }
+
+        // ============================================================
+        // 🔍 SEARCH & FILTER
+        // ============================================================
+
+        function handleSearch() {
+            currentSearchQuery = document.getElementById('search-input').value;
+            renderCards();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            
+            renderCards();
+        }
+
+        // ============================================================
+        // 📝 CARD CREATION
+        // ============================================================
+
+        async function openCreateModal() {
+            document.getElementById('create-modal').style.display = 'flex';
+            
+            // Populate deck suggestions
+            const manager = getSRSManager();
+            const decks = manager.getDecks();
+            const datalist = document.getElementById('deck-suggestions');
+            datalist.innerHTML = decks.map(deck => `<option value="${escapeHtml(deck)}">`).join('');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('create-modal').style.display = 'none';
+            document.getElementById('create-card-form').reset();
+        }
+
+        async function createCard(event) {
+            event.preventDefault();
+            
+            const question = document.getElementById('card-question').value.trim();
+            const answer = document.getElementById('card-answer').value.trim();
+            const deck = document.getElementById('card-deck').value.trim() || 'default';
+            const tagsStr = document.getElementById('card-tags').value.trim();
+            const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+            
+            const manager = getSRSManager();
+            const card = manager.createCard({ question, answer, deck, tags });
+            
+            if (card) {
+                showToast('✅ تم إنشاء البطاقة بنجاح');
+                closeCreateModal();
+                await loadCards();
+                updateStats();
+            } else {
+                showToast('❌ فشل إنشاء البطاقة');
+            }
+        }
+
+        // ============================================================
+        // 🔍 CARD DETAIL
+        // ============================================================
+
+        async function showCardDetail(cardId) {
+            const manager = getSRSManager();
+            const card = manager.getCardById(cardId);
+            
+            if (!card) {
+                showToast('❌ البطاقة غير موجودة');
+                return;
+            }
+            
+            selectedCardId = cardId;
+            
+            const content = document.getElementById('card-detail-content');
+            
+            // Build assessment info
+            let assessmentHtml = '';
+            if (card.assessment) {
+                const a = card.assessment;
+                const daysUntil = card.getDaysUntilDue();
+                const retrievability = card.getRetrievability();
+                const retPercent = (retrievability * 100).toFixed(1);
+                
+                assessmentHtml = `
+                    <div class="assessment-info">
+                        <h4>📊 معلومات التقييم</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">الحالة:</span>
+                                <span class="badge badge-${a.state.toLowerCase()}">${a.state}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">الاستقرار:</span>
+                                <span>${a.stability.toFixed(2)}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">الصعوبة:</span>
+                                <span>${a.difficulty.toFixed(2)}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">معدل الاستبقاء:</span>
+                                <span>${retPercent}%</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">المراجعة القادمة:</span>
+                                <span>${formatDate(a.nextScheduledAssessment)}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">الأيام المتبقية:</span>
+                                <span>${daysUntil === 0 ? 'اليوم' : daysUntil + ' يوم'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <div class="detail-section">
+                    <h3>📝 السؤال</h3>
+                    <p class="card-question">${escapeHtml(card.question)}</p>
+                </div>
+                <div class="detail-section">
+                    <h3>✅ الجواب</h3>
+                    <p class="card-answer">${escapeHtml(card.answer)}</p>
+                </div>
+                ${assessmentHtml}
+                <div class="detail-section">
+                    <h3>🏷️ معلومات</h3>
+                    <p><strong>الأسطوانة:</strong> ${escapeHtml(card.deck)}</p>
+                    <p><strong>الوسوم:</strong> ${card.tags.map(t => escapeHtml(t)).join(', ') || 'لا يوجد'}</p>
+                    <p><strong>المراجعات:</strong> ${card.reviewsCount || 0}</p>
+                    <p><strong>تاريخ الإنشاء:</strong> ${formatDate(card.createdAt)}</p>
+                </div>
+            `;
+            
+            document.getElementById('detail-modal').style.display = 'flex';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').style.display = 'none';
+            selectedCardId = null;
+        }
+
+        async function deleteCurrentCard() {
+            if (!selectedCardId) return;
+            
+            if (!confirm('هل أنت متأكد من حذف هذه البطاقة؟')) {
+                return;
+            }
+            
+            const manager = getSRSManager();
+            const result = manager.deleteCard(selectedCardId);
+            
+            if (result) {
+                showToast('✅ تم حذف البطاقة');
+                closeDetailModal();
+                await loadCards();
+                updateStats();
+            } else {
+                showToast('❌ فشل حذف البطاقة');
+            }
+        }
+
+        // ============================================================
+        // 🛠️ UTILITY FUNCTIONS
+        // ============================================================
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(date) {
+            if (!date) return 'غير محدد';
+            const d = new Date(date);
+            return d.toLocaleDateString('ar-DZ', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            // Use global toast if available
+            if (window.showToast) {
+                window.showToast(message, type);
+            } else {
+                console.log(message);
+            }
+        }
+
+        // Close modals on background click
+        document.getElementById('create-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'create-modal') closeCreateModal();
+        });
+
+        document.getElementById('detail-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') closeDetailModal();
+        });
+
+        // Navigation helper
+        function navigateTo(page) {
+            if (window.navigateToDashboard) {
+                window.navigateTo(page);
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
